@@ -299,13 +299,15 @@ def load_imagenet(resolution, args, **kwargs):
 
 
 def load_oi(args, **kwargs):
-    args.input_size = [3, 128, 128]
+    res = 128 if args.data_augmentation_level == 2 else 64
+
+    args.input_size = [3, res, res]
 
     trainpath = f'/scratch/cluster/scottcao/open/train_oi'
     valpath = f'/scratch/cluster/scottcao/open/val_oi'
 
     train_transform = transforms.Compose([
-        transforms.RandomCrop(128),
+        transforms.RandomCrop(res),
         ToTensorNoNorm()
     ])
 
@@ -318,7 +320,7 @@ def load_oi(args, **kwargs):
 
     print('Number of data images', len(imagenet_data))
 
-    val_idcs = np.random.choice(len(imagenet_data), size=40, replace=False)
+    val_idcs = np.random.choice(len(imagenet_data), size=50, replace=False)
     train_idcs = np.setdiff1d(np.arange(len(imagenet_data)), val_idcs)
 
     train_dataset = torch.utils.data.dataset.Subset(
