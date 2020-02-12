@@ -23,7 +23,7 @@ from scipy.io import loadmat
 from utils import cachers
 
 
-class ImageNetX(data.Dataset):
+class ImageNetX(Dataset):
     """ Generic Dataset class for a directory full of images given a list of image 
         filenames. Can be used for any unsupervised learning task without labels.
     """
@@ -318,8 +318,8 @@ def load_dataset(args, **kwargs):
     return train_loader, val_loader, test_loader, args
 
 
-if __name__ == '__main__':
-    class Args():
-        def __init__(self):
-            self.batch_size = 128
-    train_loader, val_loader, test_loader, args = load_imagenet32(Args())
+# if __name__ == '__main__':
+#     class Args():
+#         def __init__(self):
+#             self.batch_size = 128
+#     train_loader, val_loader, test_loader, args = load_imagenet32(Args())
