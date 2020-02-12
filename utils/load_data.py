@@ -1,28 +1,71 @@
 from __future__ import print_function
 
+import io
 import numbers
-
-import torch
-import torch.utils.data as data_utils
-import pickle
-from scipy.io import loadmat
-
-import numpy as np
-
-import os
-from torch.utils.data import Dataset
-import torchvision
-from torchvision import transforms
-from torchvision.transforms import functional as vf
-from torch.utils.data import ConcatDataset
-
-from PIL import Image
-
 import os
 import os.path
-from os.path import join
+import pickle
 import sys
 import tarfile
+from os.path import join
+from typing import List
+
+import numpy as np
+import torch
+import torch.utils.data as data_utils
+import torchvision
+from PIL import Image
+from torch.utils.data import ConcatDataset, Dataset
+from torchvision import transforms
+from torchvision.transforms import functional as vf
+
+from scipy.io import loadmat
+from utils import cachers
+
+
+class ImageNetX(data.Dataset):
+    """ Generic Dataset class for a directory full of images given a list of image 
+        filenames. Can be used for any unsupervised learning task without labels.
+    """
+
+    def __init__(self,
+                 dir_path: str,
+                 filenames: List[str],
+                 transforms,  # torchvision Transform
+                 caches: List[cachers.Cacher]) -> None:
+        """ param dir_path: Path to image directory
+            param filenames: List of image filenames in the directory.
+            param transforms: a torchvision Transform that can be applied to 
+                the image.
+        """
+        self.dir_path = dir_path
+        self.filenames = filenames
+        assert filenames, f"{filenames} is empty"
+        self.transforms = transforms
+        self.caches = caches
+
+    def load(self, fp: io.BytesIO) -> torch.Tensor:
+        return self.transforms(Image.open(fp))
+
+    def read(self, filename: str) -> bytes:
+        with open(os.path.join(self.dir_path, filename), "rb") as f:
+            return f.read()
+
+    def __getitem__(self, idx: int) -> torch.Tensor:  # type: ignore
+        for cache in self.caches:
+            if idx in cache:
+                return self.load(io.BytesIO(cache[idx]))
+        filename = self.filenames[idx]
+        file_bytes = self.read(filename)
+        img = self.load(io.BytesIO(file_bytes))
+        for cache in self.caches:
+            if not cache.is_full():
+                cache[idx] = file_bytes
+                return img
+        return img
+
+    def __len__(self) -> int:
+        return len(self.filenames)
 
 
 class ToTensorNoNorm():
@@ -109,21 +152,21 @@ def load_cifar10(args, **kwargs):
 
     if args.data_augmentation_level == 2:
         data_transform = transforms.Compose([
-                transforms.ToPILImage(),
-                transforms.RandomHorizontalFlip(),
-                transforms.Pad(int(math.ceil(32 * 0.05)), padding_mode='edge'),
-                transforms.RandomAffine(degrees=0, translate=(0.05, 0.05)),
-                transforms.CenterCrop(32)
-            ])
+            transforms.ToPILImage(),
+            transforms.RandomHorizontalFlip(),
+            transforms.Pad(int(math.ceil(32 * 0.05)), padding_mode='edge'),
+            transforms.RandomAffine(degrees=0, translate=(0.05, 0.05)),
+            transforms.CenterCrop(32)
+        ])
     elif args.data_augmentation_level == 1:
         data_transform = transforms.Compose([
-                transforms.ToPILImage(),
-                transforms.RandomHorizontalFlip(),
-            ])
+            transforms.ToPILImage(),
+            transforms.RandomHorizontalFlip(),
+        ])
     else:
         data_transform = transforms.Compose([
-                transforms.ToPILImage(),
-            ])
+            transforms.ToPILImage(),
+        ])
 
     x_val = x_train[-10000:]
     y_val = y_train[-10000:]
@@ -131,14 +174,20 @@ def load_cifar10(args, **kwargs):
     x_train = x_train[:-10000]
     y_train = y_train[:-10000]
 
-    train = CustomTensorDataset(torch.from_numpy(x_train), torch.from_numpy(y_train), transform=data_transform)
-    train_loader = data_utils.DataLoader(train, batch_size=args.batch_size, shuffle=True, **kwargs)
+    train = CustomTensorDataset(torch.from_numpy(
+        x_train), torch.from_numpy(y_train), transform=data_transform)
+    train_loader = data_utils.DataLoader(
+        train, batch_size=args.batch_size, shuffle=True, **kwargs)
 
-    validation = data_utils.TensorDataset(torch.from_numpy(x_val), torch.from_numpy(y_val))
-    val_loader = data_utils.DataLoader(validation, batch_size=args.batch_size, shuffle=False, **kwargs)
+    validation = data_utils.TensorDataset(
+        torch.from_numpy(x_val), torch.from_numpy(y_val))
+    val_loader = data_utils.DataLoader(
+        validation, batch_size=args.batch_size, shuffle=False, **kwargs)
 
-    test = data_utils.TensorDataset(torch.from_numpy(x_test), torch.from_numpy(y_test))
-    test_loader = data_utils.DataLoader(test, batch_size=args.batch_size, shuffle=False, **kwargs)
+    test = data_utils.TensorDataset(
+        torch.from_numpy(x_test), torch.from_numpy(y_test))
+    test_loader = data_utils.DataLoader(
+        test, batch_size=args.batch_size, shuffle=False, **kwargs)
 
     return train_loader, val_loader, test_loader, args
 
@@ -190,8 +239,9 @@ def load_imagenet(resolution, args, **kwargs):
 
     args.input_size = [3, resolution, resolution]
 
-    trainpath = '../imagenet{res}/train_{res}x{res}.tar'.format(res=resolution)
-    valpath = '../imagenet{res}/valid_{res}x{res}.tar'.format(res=resolution)
+    res = resolution
+    trainpath = f'/scratch/cluster/scottcao/lossless_comp/train_{res}x{res}'
+    valpath = f'/scratch/cluster/scottcao/lossless_comp/valid_{res}x{res}'
 
     trainpath = extract_tar(trainpath)
     valpath = extract_tar(valpath)
@@ -202,9 +252,13 @@ def load_imagenet(resolution, args, **kwargs):
 
     print('Starting loading ImageNet')
 
-    imagenet_data = torchvision.datasets.ImageFolder(
-        trainpath,
-        transform=data_transform)
+    # imagenet_data = torchvision.datasets.ImageFolder(
+    # trainpath,
+    # transform=data_transform)
+    with open(f"/scratch/cluster/scottcao/imagenet64_train.txt") as f:
+        train_filenames = [filename.strip() for filename in f]
+    imagenet_data = ImageNetX(
+        train_path, train_filenames, transforms=data_transform, caches=[])
 
     print('Number of data images', len(imagenet_data))
 
@@ -228,9 +282,13 @@ def load_imagenet(resolution, args, **kwargs):
         shuffle=False,
         **kwargs)
 
-    test_dataset = torchvision.datasets.ImageFolder(
-        valpath,
-        transform=data_transform)
+    # test_dataset = torchvision.datasets.ImageFolder(
+    # valpath,
+    # transform=data_transform)
+    with open(f"/scratch/cluster/scottcao/imagenet64_valid.txt") as f:
+        val_filenames = [filename.strip() for filename in f]
+    test_dataset = ImageNetX(
+        valpath, val_filenames, transforms=data_transform, caches=[])
 
     print('Number of val images:', len(test_dataset))
 
@@ -246,11 +304,14 @@ def load_imagenet(resolution, args, **kwargs):
 def load_dataset(args, **kwargs):
 
     if args.dataset == 'cifar10':
-        train_loader, val_loader, test_loader, args = load_cifar10(args, **kwargs)
+        train_loader, val_loader, test_loader, args = load_cifar10(
+            args, **kwargs)
     elif args.dataset == 'imagenet32':
-        train_loader, val_loader, test_loader, args = load_imagenet(32, args, **kwargs)
+        train_loader, val_loader, test_loader, args = load_imagenet(
+            32, args, **kwargs)
     elif args.dataset == 'imagenet64':
-        train_loader, val_loader, test_loader, args = load_imagenet(64, args, **kwargs)
+        train_loader, val_loader, test_loader, args = load_imagenet(
+            64, args, **kwargs)
     else:
         raise Exception('Wrong name of the dataset!')
 

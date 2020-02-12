@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
+
 import argparse
+
+import numpy as np
 import torch
 import torch.utils.data
-import numpy as np
 
 from utils.load_data import load_dataset
-
 
 parser = argparse.ArgumentParser(description='PyTorch Discrete Normalizing flows')
 
@@ -150,7 +151,7 @@ def run(args, kwargs):
 
     t = 0
     with torch.no_grad():
-        for data, _ in test_loader:
+        for data in test_loader:
             if args.cuda:
                 data = data.cuda()
 

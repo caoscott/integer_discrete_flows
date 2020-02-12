@@ -2,23 +2,25 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
+
 import argparse
+import os
 import time
-import torch
-import torch.utils.data
-import torch.optim as optim
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
+import torch
+import torch.optim as optim
+import torch.utils.data
 from torchvision.utils import make_grid
 
-import os
-from optimization.training import train, evaluate
+import imageio
+from optimization.training import evaluate, train
 from utils.load_data import load_dataset
 from utils.plotting import plot_training_curve
-import imageio
 
-
-parser = argparse.ArgumentParser(description='PyTorch Discrete Normalizing flows')
+parser = argparse.ArgumentParser(
+    description='PyTorch Discrete Normalizing flows')
 
 parser.add_argument('-d', '--dataset', type=str, default='cifar10', choices=['cifar10', 'imagenet32', 'imagenet64'],
                     metavar='DATASET',
@@ -68,7 +70,7 @@ def run(args, kwargs):
 
     images = []
     with torch.no_grad():
-        for data, _ in test_loader:
+        for data in test_loader:
 
             if args.cuda:
                 data = data.cuda()

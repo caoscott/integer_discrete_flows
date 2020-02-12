@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
+
 import argparse
-import time
-import torch
-import torch.utils.data
-import torch.optim as optim
-import numpy as np
-import math
-import random
-
-import os
-
 import datetime
+import math
+import os
+import random
+import time
 
-from optimization.training import train, evaluate
+import numpy as np
+import torch
+import torch.optim as optim
+import torch.utils.data
+
+from optimization.training import evaluate, train
 from utils.load_data import load_dataset
 
 parser = argparse.ArgumentParser(description='PyTorch Discrete Normalizing flows')
@@ -200,7 +200,7 @@ def run(args, kwargs):
     # INIT
     # ====================================
     # data dependend initialization on CPU
-    for batch_idx, (data, _) in enumerate(train_loader):
+    for batch_idx, data in enumerate(train_loader):
         model(data)
         break
 
