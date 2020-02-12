@@ -318,7 +318,7 @@ def load_oi(args, **kwargs):
 
     print('Number of data images', len(imagenet_data))
 
-    val_idcs = np.random.choice(len(imagenet_data), size=50, replace=False)
+    val_idcs = np.random.choice(len(imagenet_data), size=40, replace=False)
     train_idcs = np.setdiff1d(np.arange(len(imagenet_data)), val_idcs)
 
     train_dataset = torch.utils.data.dataset.Subset(
