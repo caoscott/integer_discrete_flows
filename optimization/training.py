@@ -66,7 +66,6 @@ def train(epoch, train_loader, model, opt, args):
 
         del data
 
-
     from utils.visual_evaluation import plot_images
     import os
     if not os.path.exists(args.snap_dir + 'training/'):

@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser(
     description='PyTorch Discrete Normalizing flows')
 
 parser.add_argument('-d', '--dataset', type=str, default='cifar10',
-                    choices=['cifar10', 'imagenet32', 'imagenet64'],
+                    choices=['cifar10', 'imagenet32', 'imagenet64', 'oi'],
                     metavar='DATASET',
                     help='Dataset choice.')
 

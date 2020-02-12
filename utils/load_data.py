@@ -298,6 +298,66 @@ def load_imagenet(resolution, args, **kwargs):
     return train_loader, val_loader, test_loader, args
 
 
+def load_oi(args, **kwargs):
+    args.input_size = [3, 128, 128]
+
+    trainpath = f'/scratch/cluster/scottcao/open/train_oi'
+    valpath = f'/scratch/cluster/scottcao/open/val_oi'
+
+    train_transform = transforms.Compose([
+        transforms.RandomCrop(128),
+        ToTensorNoNorm()
+    ])
+
+    print('Starting loading Open Images')
+
+    with open(f"/scratch/cluster/scottcao/open/train_oi.txt") as f:
+        train_filenames = [filename.strip() for filename in f]
+    imagenet_data = ImageNetX(
+        trainpath, train_filenames, transforms=train_transform, caches=[])
+
+    print('Number of data images', len(imagenet_data))
+
+    val_idcs = np.random.choice(len(imagenet_data), size=50, replace=False)
+    train_idcs = np.setdiff1d(np.arange(len(imagenet_data)), val_idcs)
+
+    train_dataset = torch.utils.data.dataset.Subset(
+        imagenet_data, train_idcs)
+    val_dataset = torch.utils.data.dataset.Subset(
+        imagenet_data, val_idcs)
+
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset,
+        batch_size=args.batch_size,
+        shuffle=True,
+        **kwargs)
+
+    val_loader = torch.utils.data.DataLoader(
+        val_dataset,
+        batch_size=args.batch_size,
+        shuffle=False,
+        **kwargs)
+
+    test_transform = transforms.Compose([
+        transforms.CenterCrop(128),
+        ToTensorNoNorm()
+    ])
+    with open(f"/scratch/cluster/scottcao/open/val_oi.txt") as f:
+        val_filenames = [filename.strip() for filename in f]
+    test_dataset = ImageNetX(
+        valpath, val_filenames, transforms=test_transform, caches=[])
+
+    print('Number of val images:', len(test_dataset))
+
+    test_loader = torch.utils.data.DataLoader(
+        test_dataset,
+        batch_size=args.batch_size,
+        shuffle=False,
+        **kwargs)
+
+    return train_loader, val_loader, test_loader, args
+
+
 def load_dataset(args, **kwargs):
 
     if args.dataset == 'cifar10':
@@ -309,6 +369,8 @@ def load_dataset(args, **kwargs):
     elif args.dataset == 'imagenet64':
         train_loader, val_loader, test_loader, args = load_imagenet(
             64, args, **kwargs)
+    elif args.dataset == 'oi':
+        train_loader, val_loader, test_loader, args = load_oi(args, **kwargs)
     else:
         raise Exception('Wrong name of the dataset!')
 
