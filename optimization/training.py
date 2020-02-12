@@ -64,6 +64,9 @@ def train(epoch, train_loader, model, opt, args):
                 print('py{} logs '.format(i), np.mean(
                     py[1].data.cpu().numpy(), axis=(0, 1, 2, 3)))
 
+        del data
+
+
     from utils.visual_evaluation import plot_images
     import os
     if not os.path.exists(args.snap_dir + 'training/'):
