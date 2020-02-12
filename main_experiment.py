@@ -18,7 +18,8 @@ import torch.utils.data
 from optimization.training import evaluate, train
 from utils.load_data import load_dataset
 
-parser = argparse.ArgumentParser(description='PyTorch Discrete Normalizing flows')
+parser = argparse.ArgumentParser(
+    description='PyTorch Discrete Normalizing flows')
 
 parser.add_argument('-d', '--dataset', type=str, default='cifar10',
                     choices=['cifar10', 'imagenet32', 'imagenet64'],
@@ -28,7 +29,8 @@ parser.add_argument('-d', '--dataset', type=str, default='cifar10',
 parser.add_argument('-nc', '--no_cuda', action='store_true', default=False,
                     help='disables CUDA training')
 
-parser.add_argument('--manual_seed', type=int, help='manual seed, if not given resorts to random seed.')
+parser.add_argument('--manual_seed', type=int,
+                    help='manual seed, if not given resorts to random seed.')
 
 parser.add_argument('-li', '--log_interval', type=int, default=20, metavar='LOG_INTERVAL',
                     help='how many batches to wait before logging training status')
@@ -36,7 +38,8 @@ parser.add_argument('-li', '--log_interval', type=int, default=20, metavar='LOG_
 parser.add_argument('--evaluate_interval_epochs', type=int, default=25,
                     help='Evaluate per how many epochs')
 
-parser.add_argument('-od', '--out_dir', type=str, default='snapshots', metavar='OUT_DIR',
+parser.add_argument('-od', '--out_dir', type=str,
+                    default='/scratch/cluster/scottcao/idf', metavar='OUT_DIR',
                     help='output directory for model snapshots etc.')
 
 fp = parser.add_mutually_exclusive_group(required=False)
@@ -93,7 +96,8 @@ parser.add_argument('--splitfactor', default=0, type=int,
 
 parser.add_argument('--split_quarter', dest='split_quarter', action='store_true',
                     help='Split coupling layer on quarter')
-parser.add_argument('--no_split_quarter', dest='split_quarter', action='store_false')
+parser.add_argument('--no_split_quarter',
+                    dest='split_quarter', action='store_false')
 parser.set_defaults(split_quarter=True)
 # ---------------- ----------------------------------- -------------
 
@@ -158,10 +162,12 @@ def run(args, kwargs):
     args.model_signature = str(datetime.datetime.now())[0:19].replace(' ', '_')
     args.model_signature = args.model_signature.replace(':', '_')
 
-    snapshots_path = os.path.join(args.out_dir, args.variable_type + '_' + args.distribution_type + args.dataset)
+    snapshots_path = os.path.join(
+        args.out_dir, args.variable_type + '_' + args.distribution_type + args.dataset)
     snap_dir = snapshots_path
 
-    snap_dir += '_' + 'flows_' + str(args.n_flows) + '_levels_' + str(args.n_levels)
+    snap_dir += '_' + 'flows_' + \
+        str(args.n_flows) + '_levels_' + str(args.n_levels)
 
     snap_dir = snap_dir + '__' + args.model_signature + '/'
 
@@ -212,8 +218,10 @@ def run(args, kwargs):
 
     def lr_lambda(epoch):
         return min(1., (epoch+1) / args.warmup) * np.power(args.lr_decay, epoch)
-    optimizer = optim.Adamax(model.parameters(), lr=args.learning_rate, eps=1.e-7)
-    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda, last_epoch=-1)
+    optimizer = optim.Adamax(
+        model.parameters(), lr=args.learning_rate, eps=1.e-7)
+    scheduler = torch.optim.lr_scheduler.LambdaLR(
+        optimizer, lr_lambda, last_epoch=-1)
 
     # ==================================================================================================================
     # TRAINING
@@ -267,7 +275,8 @@ def run(args, kwargs):
     train_times = np.array(train_times)
     mean_train_time = np.mean(train_times)
     std_train_time = np.std(train_times, ddof=1)
-    print('Average train time per epoch: %.2f +/- %.2f' % (mean_train_time, std_train_time))
+    print('Average train time per epoch: %.2f +/- %.2f' %
+          (mean_train_time, std_train_time))
 
     # ==================================================================================================================
     # EVALUATION
