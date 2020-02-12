@@ -243,9 +243,6 @@ def load_imagenet(resolution, args, **kwargs):
     trainpath = f'/scratch/cluster/scottcao/lossless_comp/train_{res}x{res}'
     valpath = f'/scratch/cluster/scottcao/lossless_comp/valid_{res}x{res}'
 
-    trainpath = extract_tar(trainpath)
-    valpath = extract_tar(valpath)
-
     data_transform = transforms.Compose([
         ToTensorNoNorm()
     ])
@@ -258,7 +255,7 @@ def load_imagenet(resolution, args, **kwargs):
     with open(f"/scratch/cluster/scottcao/imagenet64_train.txt") as f:
         train_filenames = [filename.strip() for filename in f]
     imagenet_data = ImageNetX(
-        train_path, train_filenames, transforms=data_transform, caches=[])
+        trainpath, train_filenames, transforms=data_transform, caches=[])
 
     print('Number of data images', len(imagenet_data))
 
