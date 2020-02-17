@@ -258,7 +258,7 @@ def run(args, kwargs):
             if np.mean(tr_bpd) < best_train_bpd:
                 best_train_bpd = np.mean(tr_bpd)
                 best_val_bpd = v_bpd
-                torch.save(model.module, snap_dir + 'a.model')
+                torch.save(model, snap_dir + 'a.model')
                 torch.save(optimizer, snap_dir + 'a.optimizer')
                 print('->model saved<-')
 
