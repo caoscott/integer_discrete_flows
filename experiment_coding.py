@@ -153,7 +153,7 @@ def run(args, kwargs):
     _, _, test_loader, args = load_dataset(args, **kwargs)
 
     final_model = torch.load(args.snap_dir + 'a.model')
-    count_params(final_model)
+    print(f"Number of params: {count_params(final_model)}")
 
     if hasattr(final_model, 'module'):
         final_model = final_model.module
