@@ -12,6 +12,7 @@ import torch.utils.data
 from PIL import Image
 from torchvision import transforms as T
 
+import timer
 from utils.load_data import load_dataset
 
 parser = argparse.ArgumentParser(
@@ -135,7 +136,7 @@ def run(args, kwargs):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-    #args.snap_dir = snap_dir = \
+    # args.snap_dir = snap_dir = \
     #    '/u/scottcao/scratch/idf/discrete_logisticoi_flows_8_levels_4__2020-02-23_12_29_53/'
 
     # ==================================================================================================================
@@ -145,7 +146,7 @@ def run(args, kwargs):
     # ==================================================================================================================
     # LOAD DATA
     # ==================================================================================================================
-    train_loader, val_loader, test_loader, args = load_dataset(args, **kwargs)
+    _, _, test_loader, args = load_dataset(args, **kwargs)
 
     final_model = torch.load(args.snap_dir + 'a.model')
     if hasattr(final_model, 'module'):
@@ -156,17 +157,17 @@ def run(args, kwargs):
     errors = []
     bpds = []
 
-    import time
-    start = time.time()
+    acc = timer.TimeAccumulator()
 
     t = 0
     with torch.no_grad():
         for data in test_loader:
-            if args.cuda:
-                data = data.cuda()
 
-            state, state_sizes, bpd, error = \
-                encode_images(data, final_model, decode=not args.no_decode)
+            with acc.execute():
+                if args.cuda:
+                    data = data.cuda()
+                state, state_sizes, bpd, error = \
+                    encode_images(data, final_model, decode=not args.no_decode)
 
             errors += [error]
             bpds.extend(bpd)
@@ -189,10 +190,12 @@ def run(args, kwargs):
                 print('Error: {}'.format(np.sum(errors)))
 
             print(
-                'Took {:.3f} seconds / example'.format((time.time() - start) / t))
+                'Took {:.3f} seconds / example'.format(acc.mean_time_spent()))
     print('Final bpd: {:.3f} error: {}'.format(
         np.mean(sizes) / np.prod(data.size()[1:]),
         np.sum(errors)))
+    print(
+        'Took {:.3f} seconds / example'.format(acc.mean_time_spent()))
 
 
 if __name__ == "__main__":
