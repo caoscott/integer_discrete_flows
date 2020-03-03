@@ -363,16 +363,17 @@ def load_oi(args, **kwargs):
 
 def crop(x: torch.Tensor) -> torch.Tensor:
     _, H, W = x.size()
-    h_start = (H - (H // 128 * 128)) // 2
-    w_start = (W - (W // 128 * 128)) // 2
-    crops = [x[..., h: h+128, w: w+128]
-             for h in range(h_start, H-127, 128)
-             for w in range(w_start, W-127, 128)]
+    crop = 64
+    h_start = (H - (H // crop * crop)) // 2
+    w_start = (W - (W // crop * crop)) // 2
+    crops = [x[..., h: h+crop, w: w+crop]
+             for h in range(h_start, H-crop+1, crop)
+             for w in range(w_start, W-crop+1, crop)]
     return torch.stack(crops)
 
 
 def load_oi_test(args, **kwargs):
-    args.input_size = [3, 128, 128]
+    args.input_size = [3, 64, 64]
     valpath = f'/scratch/cluster/scottcao/open/val_oi_500_r'
 
     print('Starting loading Open Images')
