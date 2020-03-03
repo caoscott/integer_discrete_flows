@@ -361,13 +361,14 @@ def load_oi(args, **kwargs):
     return train_loader, val_loader, test_loader, args
 
 
-def pad_to_even(x: Image) -> Image:
-    w, h = x.size
-    pad_right = w % 2 == 1
-    pad_bottom = h % 2 == 1
-    padding = [0, 0, 1 if pad_right else 0, 1 if pad_bottom else 0]
-    x = vf.pad(x, padding, padding_mode="edge")
-    return x
+def crop(x: torch.Tensor) -> torch.Tensor:
+    _, H, W = x.size()
+    h_start = (H - (H // 128 * 128)) // 2
+    w_start = (W - (W // 128 * 128)) // 2
+    crops = [x[..., h: h+128, w: w+128]
+             for h in range(h_start, H-127, 128)
+             for w in range(w_start, W-127, 128)]
+    return torch.stack(crops)
 
 
 def load_oi_test(args, **kwargs):
@@ -375,7 +376,7 @@ def load_oi_test(args, **kwargs):
 
     print('Starting loading Open Images')
     data_transforms = transforms.Compose([
-        transforms.Lambda(pad_to_even),
+        transforms.Lambda(crop),
         ToTensorNoNorm(),
     ])
 
