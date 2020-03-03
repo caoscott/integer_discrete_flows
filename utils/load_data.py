@@ -376,8 +376,8 @@ def load_oi_test(args, **kwargs):
 
     print('Starting loading Open Images')
     data_transforms = transforms.Compose([
-        transforms.Lambda(crop),
         ToTensorNoNorm(),
+        transforms.Lambda(crop),
     ])
 
     with open(f"/scratch/cluster/scottcao/open/val_oi_500_r.txt") as f:
