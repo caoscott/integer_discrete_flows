@@ -108,6 +108,7 @@ def encode_patches(imgs, model, decode):
     # c, h, w = model.args.input_size
     # assert img_h == h and img_w == w
 
+    print(imgs.shape)
     states = model.encode(imgs)
 
     bpd = model.forward(imgs)[1].cpu().numpy()
