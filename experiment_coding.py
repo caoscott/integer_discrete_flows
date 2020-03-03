@@ -168,8 +168,7 @@ def run(args, kwargs):
     t = 0
     with torch.no_grad():
         for data in test_loader:
-            print(data.shape)
-            data = data.unsqueeze(0)
+            data = data.squeeze(0)
 
             with acc.execute():
                 if args.cuda:
