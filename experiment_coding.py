@@ -167,7 +167,7 @@ def run(args, kwargs):
 
     t = 0
     with torch.no_grad():
-        for data in test_loader:
+        for i, data in enumerate(test_loader):
             data = data.squeeze(0)
 
             with acc.execute():
@@ -185,8 +185,8 @@ def run(args, kwargs):
             print(
                 'Examples: {}/{} bpd compression: {:.3f} error: {},'
                 ' analytical bpd {:.3f} time: {:.3f}'.format(
-                    t, len(test_loader.dataset),
-                    np.mean(sizes) / np.prod(data.size()[1:]),
+                    i, len(test_loader.dataset),
+                    np.sum(sizes) / np.prod(data.size()[1:]) / t,
                     np.sum(errors),
                     np.mean(bpds),
                     acc.mean_time_spent(),
