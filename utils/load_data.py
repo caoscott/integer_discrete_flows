@@ -372,6 +372,7 @@ def crop(x: torch.Tensor) -> torch.Tensor:
 
 
 def load_oi_test(args, **kwargs):
+    args.input_size = 3, 128, 128
     valpath = f'/scratch/cluster/scottcao/open/val_oi_500_r'
 
     print('Starting loading Open Images')

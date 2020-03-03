@@ -67,7 +67,6 @@ kwargs = {'num_workers': 4, 'pin_memory': True} if args.cuda else {}
 def encode_images(img, model, decode):
     batchsize, img_c, img_h, img_w = img.size()
     # c, h, w = model.args.input_size
-    model.args.input_size = 3, 128, 128
     c, h, w = img_c, img_h, img_w
 
     # assert img_h == img_w and h == w
