@@ -177,20 +177,18 @@ def run(args, kwargs):
 
             print(
                 'Examples: {}/{} bpd compression: {:.3f} error: {},'
-                ' analytical bpd {:.3f}'.format(
+                ' analytical bpd {:.3f} time: {:.3f}'.format(
                     t, len(test_loader.dataset),
                     np.mean(sizes) / np.prod(data.size()[1:]),
                     np.sum(errors),
-                    np.mean(bpds)
+                    np.mean(bpds),
+                    acc.mean_time_spent(),
                 ))
 
-            if args.no_decode:
-                print('Not testing decoding.')
-            else:
-                print('Error: {}'.format(np.sum(errors)))
-
-            print(
-                'Took {:.3f} seconds / example'.format(acc.mean_time_spent()))
+            # if args.no_decode:
+            # print('Not testing decoding.')
+            # else:
+            # print('Error: {}'.format(np.sum(errors)))
     print('Final bpd: {:.3f} error: {}'.format(
         np.mean(sizes) / np.prod(data.size()[1:]),
         np.sum(errors)))
