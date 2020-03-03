@@ -15,16 +15,16 @@ import torch
 import torch.utils.data as data_utils
 import torchvision
 from PIL import Image
+from scipy.io import loadmat
 from torch.utils.data import ConcatDataset, Dataset
 from torchvision import transforms
 from torchvision.transforms import functional as vf
 
-from scipy.io import loadmat
 from utils import cachers
 
 
 class ImageNetX(Dataset):
-    """ Generic Dataset class for a directory full of images given a list of image 
+    """ Generic Dataset class for a directory full of images given a list of image
         filenames. Can be used for any unsupervised learning task without labels.
     """
 
@@ -35,7 +35,7 @@ class ImageNetX(Dataset):
                  caches: List[cachers.Cacher]) -> None:
         """ param dir_path: Path to image directory
             param filenames: List of image filenames in the directory.
-            param transforms: a torchvision Transform that can be applied to 
+            param transforms: a torchvision Transform that can be applied to
                 the image.
         """
         self.dir_path = dir_path
@@ -303,8 +303,8 @@ def load_oi(args, **kwargs):
 
     args.input_size = [3, res, res]
 
-    trainpath = f'/scratch/cluster/scottcao/open/train_oi'
-    valpath = f'/scratch/cluster/scottcao/open/val_oi'
+    trainpath = f'/scratch/cluster/scottcao/open/train_oi_resized'
+    valpath = f'/scratch/cluster/scottcao/open/val_oi_500_r'
 
     train_transform = transforms.Compose([
         transforms.RandomCrop(res),
@@ -313,10 +313,11 @@ def load_oi(args, **kwargs):
 
     print('Starting loading Open Images')
 
-    with open(f"/scratch/cluster/scottcao/open/train_oi.txt") as f:
+    with open(f"/scratch/cluster/scottcao/open/train_oi_resized.txt") as f:
         train_filenames = [filename.strip() for filename in f]
     imagenet_data = ImageNetX(
-        trainpath, train_filenames, transforms=train_transform, caches=[])
+        trainpath, train_filenames, transforms=train_transform,
+        caches=[cachers.Memory(36000)])
 
     print('Number of data images', len(imagenet_data))
 
@@ -344,7 +345,7 @@ def load_oi(args, **kwargs):
         transforms.CenterCrop(128),
         ToTensorNoNorm()
     ])
-    with open(f"/scratch/cluster/scottcao/open/val_oi.txt") as f:
+    with open(f"/scratch/cluster/scottcao/open/val_oi_500_r.txt") as f:
         val_filenames = [filename.strip() for filename in f]
     test_dataset = ImageNetX(
         valpath, val_filenames, transforms=test_transform, caches=[])
@@ -360,6 +361,40 @@ def load_oi(args, **kwargs):
     return train_loader, val_loader, test_loader, args
 
 
+def pad_to_even(x: Image) -> Image:
+    w, h = x.size
+    pad_right = w % 2 == 1
+    pad_bottom = h % 2 == 1
+    padding = [0, 0, 1 if pad_right else 0, 1 if pad_bottom else 0]
+    x = vf.pad(x, padding, padding_mode="edge")
+    return x
+
+
+def load_oi_test(args, **kwargs):
+    valpath = f'/scratch/cluster/scottcao/open/val_oi_500_r'
+
+    print('Starting loading Open Images')
+    data_transforms = transforms.Compose([
+        transforms.Lambda(pad_to_even),
+        ToTensorNoNorm(),
+    ])
+
+    with open(f"/scratch/cluster/scottcao/open/val_oi_500_r.txt") as f:
+        val_filenames = [filename.strip() for filename in f]
+    test_dataset = ImageNetX(
+        valpath, val_filenames, transforms=data_transforms, caches=[])
+
+    print('Number of val images:', len(test_dataset))
+
+    test_loader = torch.utils.data.DataLoader(
+        test_dataset,
+        batch_size=1,
+        shuffle=False,
+        **kwargs)
+
+    return test_loader, test_loader, test_loader, args
+
+
 def load_dataset(args, **kwargs):
 
     if args.dataset == 'cifar10':
@@ -373,6 +408,9 @@ def load_dataset(args, **kwargs):
             64, args, **kwargs)
     elif args.dataset == 'oi':
         train_loader, val_loader, test_loader, args = load_oi(args, **kwargs)
+    elif args.dataset == 'oi_test':
+        train_loader, val_loader, test_loader, args = load_oi_test(
+            args, **kwargs)
     else:
         raise Exception('Wrong name of the dataset!')
 

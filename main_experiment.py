@@ -14,9 +14,12 @@ import numpy as np
 import torch
 import torch.optim as optim
 import torch.utils.data
+from PIL import ImageFile
 
 from optimization.training import evaluate, train
 from utils.load_data import load_dataset
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 parser = argparse.ArgumentParser(
     description='PyTorch Discrete Normalizing flows')
@@ -145,7 +148,7 @@ torch.manual_seed(args.manual_seed)
 np.random.seed(args.manual_seed)
 
 
-kwargs = {'num_workers': 4, 'pin_memory': True} if args.cuda else {}
+kwargs = {'num_workers': 2} if args.cuda else {}
 
 
 def run(args, kwargs):

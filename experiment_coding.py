@@ -7,20 +7,28 @@ import argparse
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 import torch.utils.data
+from PIL import Image
+from torchvision import transforms as T
 
 from utils.load_data import load_dataset
 
-parser = argparse.ArgumentParser(description='PyTorch Discrete Normalizing flows')
+parser = argparse.ArgumentParser(
+    description='PyTorch Discrete Normalizing flows')
 
-parser.add_argument('-d', '--dataset', type=str, default='cifar10', choices=['cifar10', 'imagenet32', 'imagenet64'],
+parser.add_argument('-d', '--dataset', type=str, default='cifar10',
+                    choices=['cifar10', 'imagenet32', 'imagenet64', 'oi_test'],
                     metavar='DATASET',
                     help='Dataset choice.')
+
+parser.add_argument('-s', '--snap-dir', type=str, help="model dir")
 
 parser.add_argument('-nc', '--no_cuda', action='store_true', default=False,
                     help='disables CUDA training')
 
-parser.add_argument('--manual_seed', type=int, help='manual seed, if not given resorts to random seed.')
+parser.add_argument('--manual_seed', type=int,
+                    help='manual seed, if not given resorts to random seed.')
 
 parser.add_argument('-li', '--log_interval', type=int, default=20, metavar='LOG_INTERVAL',
                     help='how many batches to wait before logging training status')
@@ -57,9 +65,10 @@ kwargs = {'num_workers': 4, 'pin_memory': True} if args.cuda else {}
 
 def encode_images(img, model, decode):
     batchsize, img_c, img_h, img_w = img.size()
-    c, h, w = model.args.input_size
+    # c, h, w = model.args.input_size
+    c, h, w = img_c, img_h, img_w
 
-    assert img_h == img_w and h == w
+    # assert img_h == img_w and h == w
 
     if img_h != h:
         assert img_h % h == 0
@@ -90,8 +99,9 @@ def encode_images(img, model, decode):
 
 def encode_patches(imgs, model, decode):
     batchsize, img_c, img_h, img_w = imgs.size()
-    c, h, w = model.args.input_size
-    assert img_h == h and img_w == w
+    c, h, w = img_c, img_h, img_w
+    # c, h, w = model.args.input_size
+    # assert img_h == h and img_w == w
 
     states = model.encode(imgs)
 
@@ -125,8 +135,8 @@ def run(args, kwargs):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-    args.snap_dir = snap_dir = \
-        'snapshots/discrete_logisticcifar10_flows_2_levels_3__2019-09-27_13_08_49/'
+    #args.snap_dir = snap_dir = \
+    #    '/u/scottcao/scratch/idf/discrete_logisticoi_flows_8_levels_4__2020-02-23_12_29_53/'
 
     # ==================================================================================================================
     # SNAPSHOTS
@@ -137,7 +147,7 @@ def run(args, kwargs):
     # ==================================================================================================================
     train_loader, val_loader, test_loader, args = load_dataset(args, **kwargs)
 
-    final_model = torch.load(snap_dir + 'a.model')
+    final_model = torch.load(args.snap_dir + 'a.model')
     if hasattr(final_model, 'module'):
         final_model = final_model.module
     final_model = final_model.cuda()
@@ -178,7 +188,8 @@ def run(args, kwargs):
             else:
                 print('Error: {}'.format(np.sum(errors)))
 
-            print('Took {:.3f} seconds / example'.format((time.time() - start) / t))
+            print(
+                'Took {:.3f} seconds / example'.format((time.time() - start) / t))
     print('Final bpd: {:.3f} error: {}'.format(
         np.mean(sizes) / np.prod(data.size()[1:]),
         np.sum(errors)))
