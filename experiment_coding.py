@@ -183,12 +183,13 @@ def run(args, kwargs):
                     np.sum(errors),
                     np.mean(bpds),
                     acc.mean_time_spent(),
-                ))
+                ), end="\r")
 
             # if args.no_decode:
             # print('Not testing decoding.')
             # else:
             # print('Error: {}'.format(np.sum(errors)))
+    print()
     print('Final bpd: {:.3f} error: {}'.format(
         np.mean(sizes) / np.prod(data.size()[1:]),
         np.sum(errors)))
