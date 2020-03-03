@@ -98,6 +98,10 @@ def encode_images(img, model, decode):
         return encode_patches(img, model, decode)
 
 
+def count_params(model) -> int:
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
 def encode_patches(imgs, model, decode):
     batchsize, img_c, img_h, img_w = imgs.size()
     c, h, w = img_c, img_h, img_w
@@ -149,6 +153,8 @@ def run(args, kwargs):
     _, _, test_loader, args = load_dataset(args, **kwargs)
 
     final_model = torch.load(args.snap_dir + 'a.model')
+    count_params(final_model)
+
     if hasattr(final_model, 'module'):
         final_model = final_model.module
     final_model = final_model.cuda()
