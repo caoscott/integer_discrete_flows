@@ -68,6 +68,12 @@ def encode_sample(
     Z = torch.round(z / bin_width).long() + n_bins // 2 - MEAN
     Z = Z.cpu().numpy()
 
+    state = encode_cdf(Z, CDFs, state)
+
+    return state
+
+
+def encode_cdf(Z, CDFs, state):
     if not ((np.sum(Z < 0) == 0 and np.sum(Z >= n_bins-1) == 0)):
         print('Z out of allowed range of values, canceling compression')
         return None
